@@ -1,33 +1,42 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react'; // Adicione useRef aqui
 import { useTranslation } from 'react-i18next';
 import { initSocket } from '../utils/socket';
 import { toggleDarkMode } from '@/utils/themeSwitcher';
 import { Message } from './Message';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faMoon, faSun, faGlobe } from '@fortawesome/free-solid-svg-icons';
+import { faMoon, faSun } from '@fortawesome/free-solid-svg-icons';
+
+type Message = {
+  text?: string;
+  audio?: string;
+  sender: 'me' | 'simulated';
+  time: string;
+};
 
 export const ChatWindow = () => {
   const { t, i18n } = useTranslation();
-  const [messages, setMessages] = useState<{ text?: string; sender: 'me' | 'simulated'; time: string }[]>([]);
+  const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
+  const [isRecording, setIsRecording] = useState(false);
+  const [mediaRecorder, setMediaRecorder] = useState<MediaRecorder | null>(null);
+  const [audioChunks, setAudioChunks] = useState<Blob[]>([]);
   const socket = initSocket();
+  const audioRef = useRef<HTMLAudioElement | null>(null); // Agora a importação está correta
 
+  // Load messages from localStorage
   useEffect(() => {
-    try {
-      const storedMessages = localStorage.getItem('chatMessages');
-      if (storedMessages) {
-        const parsedMessages = JSON.parse(storedMessages);
-        if (Array.isArray(parsedMessages)) {
-          setMessages(parsedMessages);
-        } else {
-          console.error('Parsed data is not an array');
-        }
+    const storedMessages = localStorage.getItem('chatMessages');
+    if (storedMessages) {
+      try {
+        const parsedMessages: Message[] = JSON.parse(storedMessages);
+        setMessages(parsedMessages);
+      } catch (e) {
+        console.error('Failed to parse chatMessages from localStorage', e);
       }
-    } catch (e) {
-      console.error('Failed to load chatMessages from localStorage', e);
     }
   }, []);
 
+  // Save messages to localStorage whenever messages change
   useEffect(() => {
     try {
       localStorage.setItem('chatMessages', JSON.stringify(messages));
@@ -36,15 +45,25 @@ export const ChatWindow = () => {
     }
   }, [messages]);
 
+  // Handle WebSocket connection
   useEffect(() => {
     if (socket) {
-      socket.on('message', (msg: string) => {
-        const messageData = {
-          text: msg,
-          sender: 'simulated',
-          time: new Date().toLocaleTimeString(),
-        };
-        setMessages((prev) => [...prev, messageData]);
+      socket.on('message', (msg: string | { audio: string }) => {
+        if (typeof msg === 'string') {
+          const messageData: Message = {
+            text: msg,
+            sender: 'simulated',
+            time: new Date().toLocaleTimeString(),
+          };
+          setMessages((prev) => [...prev, messageData]);
+        } else {
+          const audioMessageData: Message = {
+            audio: msg.audio,
+            sender: 'simulated',
+            time: new Date().toLocaleTimeString(),
+          };
+          setMessages((prev) => [...prev, audioMessageData]);
+        }
       });
     }
 
@@ -55,9 +74,10 @@ export const ChatWindow = () => {
     };
   }, [socket]);
 
+  // Function to handle sending a text message
   const sendMessage = () => {
     if (input.trim() && socket) {
-      const messageData = {
+      const messageData: Message = {
         text: input,
         sender: 'me',
         time: new Date().toLocaleTimeString(),
@@ -68,9 +88,47 @@ export const ChatWindow = () => {
     }
   };
 
-  const handleLanguageChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
-    const selectedLanguage = event.target.value;
-    i18n.changeLanguage(selectedLanguage);
+  // Function to handle starting the audio recording
+  const startRecording = async () => {
+    if (!isRecording) {
+      setIsRecording(true);
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const recorder = new MediaRecorder(stream);
+      setMediaRecorder(recorder);
+
+      recorder.ondataavailable = (event) => {
+        if (event.data.size > 0) {
+          setAudioChunks((prev) => [...prev, event.data]);
+        }
+      };
+
+      recorder.start();
+    }
+  };
+
+  // Function to stop recording and send audio message
+  const stopRecording = () => {
+    if (isRecording && mediaRecorder) {
+      mediaRecorder.stop();
+      setIsRecording(false);
+
+      mediaRecorder.onstop = () => {
+        const audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
+        const audioUrl = URL.createObjectURL(audioBlob);
+
+        // Send audio message to server
+        const audioMessageData: Message = {
+          audio: audioUrl,
+          sender: 'me',
+          time: new Date().toLocaleTimeString(),
+        };
+        setMessages((prev) => [...prev, audioMessageData]);
+        socket.emit('message', { audio: audioUrl });
+
+        // Clear chunks
+        setAudioChunks([]);
+      };
+    }
   };
 
   return (
@@ -79,13 +137,13 @@ export const ChatWindow = () => {
       <div className="bg-teal-600 text-white p-4 flex items-center justify-between">
         <h3 className="text-lg font-semibold">{t('welcome_message')}</h3>
         <button onClick={toggleDarkMode} className="p-2 rounded-md dark:bg-gray-700 dark:text-white">
-            <FontAwesomeIcon icon={faMoon} className="dark:hidden" />
-            <FontAwesomeIcon icon={faSun} className="hidden dark:block" />
-          </button>
+          <FontAwesomeIcon icon={faMoon} className="dark:hidden" />
+          <FontAwesomeIcon icon={faSun} className="hidden dark:block" />
+        </button>
         <select
           className="ml-4 p-2 bg-gray-200 rounded-md dark:bg-gray-700 dark:text-white"
           value={i18n.language}
-          onChange={handleLanguageChange}
+          onChange={(e) => i18n.changeLanguage(e.target.value)}
         >
           <option value="en">English</option>
           <option value="es">Português</option>
