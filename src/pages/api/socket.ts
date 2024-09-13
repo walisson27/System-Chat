@@ -1,16 +1,44 @@
+import { Server as IOServer } from 'socket.io';
 import { NextApiRequest, NextApiResponse } from 'next';
 import { faker } from '@faker-js/faker';
 
-const fakeMessages = (req: NextApiRequest, res: NextApiResponse) => {
-  // Cria uma lista de mensagens fictícias
-  const messages = Array.from({ length: 5 }, () => ({
-    text: faker.hacker.phrase(),
-    sender: faker.internet.userName(),
-    time: new Date().toLocaleTimeString(),
-  }));
+const SocketHandler = (req: NextApiRequest, res: NextApiResponse) => {
+  const httpServer = res.socket as any; 
 
-  // Envia as mensagens fictícias como resposta
-  res.status(200).json(messages);
+  if (!httpServer.server.io) {
+    console.log('Setting up socket');
+
+    const io = new IOServer(httpServer.server);
+
+    httpServer.server.io = io;
+
+    io.on('connection', (socket) => {
+      console.log('User connected', socket.id);
+
+      // Simular mensagens aleatórias a cada 10 segundos
+      const intervalId = setInterval(() => {
+        const randomMessage = faker.hacker.phrase(); // Mensagem aleatória
+        const randomUser = faker.internet.userName(); // Nome de usuário aleatório
+        io.emit('message', `${randomUser}: ${randomMessage}`);
+      }, 10000);
+
+      // Receber mensagem do cliente e emitir para todos os outros
+      socket.on('message', (msg) => {
+        io.emit('message', msg);
+      });
+
+      // Limpar quando o usuário desconectar
+      socket.on('disconnect', () => {
+        clearInterval(intervalId);
+        console.log('User disconnected', socket.id);
+      });
+    });
+  } else {
+    console.log('Socket.io já está configurado.');
+  }
+
+  // Finalizar a resposta para a API
+  res.end();
 };
 
-export default fakeMessages;
+export default SocketHandler;

@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'; // Adicione useRef aqui
+import { useState, useEffect, useRef } from 'react'; 
 import { useTranslation } from 'react-i18next';
 import { initSocket } from '../utils/socket';
 import { toggleDarkMode } from '@/utils/themeSwitcher';
@@ -21,9 +21,8 @@ export const ChatWindow = () => {
   const [mediaRecorder, setMediaRecorder] = useState<MediaRecorder | null>(null);
   const [audioChunks, setAudioChunks] = useState<Blob[]>([]);
   const socket = initSocket();
-  const audioRef = useRef<HTMLAudioElement | null>(null); // Agora a importação está correta
+  const audioRef = useRef<HTMLAudioElement | null>(null); 
 
-  // Load messages from localStorage
   useEffect(() => {
     const storedMessages = localStorage.getItem('chatMessages');
     if (storedMessages) {
@@ -36,7 +35,6 @@ export const ChatWindow = () => {
     }
   }, []);
 
-  // Save messages to localStorage whenever messages change
   useEffect(() => {
     try {
       localStorage.setItem('chatMessages', JSON.stringify(messages));
@@ -45,7 +43,6 @@ export const ChatWindow = () => {
     }
   }, [messages]);
 
-  // Handle WebSocket connection
   useEffect(() => {
     if (socket) {
       socket.on('message', (msg: string | { audio: string }) => {
@@ -74,7 +71,6 @@ export const ChatWindow = () => {
     };
   }, [socket]);
 
-  // Function to handle sending a text message
   const sendMessage = () => {
     if (input.trim() && socket) {
       const messageData: Message = {
@@ -88,7 +84,6 @@ export const ChatWindow = () => {
     }
   };
 
-  // Function to handle starting the audio recording
   const startRecording = async () => {
     if (!isRecording) {
       setIsRecording(true);
@@ -106,7 +101,6 @@ export const ChatWindow = () => {
     }
   };
 
-  // Function to stop recording and send audio message
   const stopRecording = () => {
     if (isRecording && mediaRecorder) {
       mediaRecorder.stop();
@@ -133,7 +127,6 @@ export const ChatWindow = () => {
 
   return (
     <div className="w-full max-w-md mx-auto flex flex-col h-full bg-gray-100 dark:bg-gray-900">
-      {/* Header */}
       <div className="bg-teal-600 text-white p-4 flex items-center justify-between">
         <h3 className="text-lg font-semibold">{t('welcome_message')}</h3>
         <button onClick={toggleDarkMode} className="p-2 rounded-md dark:bg-gray-700 dark:text-white">
