@@ -1,0 +1,11 @@
+@import 'tailwindcss/base';
+@import 'tailwindcss/components';
+@import 'tailwindcss/utilities';
+
+/* Adicione estilos específicos para dark mode, se necessário */
+.dark .bg-gray-900 {
+  background-color: #1a202c;
+}
+.dark .text-white {
+  color: #f7fafc;
+}
