@@ -118,7 +118,7 @@ export const ChatWindow = ({ username }: ChatWindowProps) => {
           onChange={(e) => i18n.changeLanguage(e.target.value)}
         >
           <option value="en">English</option>
-          <option value="es">Español</option>
+          <option value="pt">Português</option>
         </select>
       </div>
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
