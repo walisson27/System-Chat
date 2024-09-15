@@ -15,7 +15,7 @@ export default function Join({ setChatVisibility, setSocket, setUsername }) {
   };
 
   return (
-    <div className="flex h-screen justify-center items-center bg-gradient-to-r from-blue-400 to-cyan-500">
+    <div className="flex h-screen justify-center items-center bg-gradient-to-r bg-animated-background">
       <div className="bg-white p-6 rounded shadow-md w-full max-w-sm">
         <h2 className="text-xl font-semibold mb-4 text-gray-800">Chat</h2>
         <input

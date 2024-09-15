@@ -105,6 +105,7 @@ export const ChatWindow = ({ username }: ChatWindowProps) => {
   };
 
   return (
+    <div className="h-full bg-animated-background">
     <div className="w-full max-w-md mx-auto flex flex-col h-full bg-gray-100 dark:bg-gray-900">
       <div className="bg-teal-600 text-white p-4 flex items-center justify-between">
         <h3 className="text-lg font-semibold">{t('welcome_message')}</h3>
@@ -145,6 +146,7 @@ export const ChatWindow = ({ username }: ChatWindowProps) => {
           {t('send_button')}
         </button>
       </div>
+    </div>
     </div>
   );
 };
