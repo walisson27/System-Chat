@@ -1,8 +1,8 @@
-import { useState, useEffect, useRef } from 'react'; 
+import { useState, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { initSocket } from '../utils/socket';
 import { toggleDarkMode } from '@/utils/themeSwitcher';
-import { Message } from './Message';
+import { Message as MessageComponent } from './Message';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faMoon, faSun } from '@fortawesome/free-solid-svg-icons';
 
@@ -10,19 +10,24 @@ type Message = {
   text?: string;
   audio?: string;
   sender: 'me' | 'simulated';
+  senderName: string;
   time: string;
 };
 
-export const ChatWindow = () => {
+
+interface ChatWindowProps {
+  username: string;
+  socket: any; 
+}
+
+export const ChatWindow = ({ username }: ChatWindowProps) => {
   const { t, i18n } = useTranslation();
+  const bottomRef = useRef<HTMLDivElement | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
-  const [isRecording, setIsRecording] = useState(false);
-  const [mediaRecorder, setMediaRecorder] = useState<MediaRecorder | null>(null);
-  const [audioChunks, setAudioChunks] = useState<Blob[]>([]);
   const socket = initSocket();
-  const audioRef = useRef<HTMLAudioElement | null>(null); 
 
+  // Carregar mensagens do localStorage
   useEffect(() => {
     const storedMessages = localStorage.getItem('chatMessages');
     if (storedMessages) {
@@ -35,6 +40,7 @@ export const ChatWindow = () => {
     }
   }, []);
 
+  // Salvar mensagens no localStorage
   useEffect(() => {
     try {
       localStorage.setItem('chatMessages', JSON.stringify(messages));
@@ -43,24 +49,23 @@ export const ChatWindow = () => {
     }
   }, [messages]);
 
+  // Receber mensagens do socket
   useEffect(() => {
     if (socket) {
-      socket.on('message', (msg: string | { audio: string }) => {
-        if (typeof msg === 'string') {
-          const messageData: Message = {
-            text: msg,
-            sender: 'simulated',
-            time: new Date().toLocaleTimeString(),
-          };
-          setMessages((prev) => [...prev, messageData]);
-        } else {
-          const audioMessageData: Message = {
-            audio: msg.audio,
-            sender: 'simulated',
-            time: new Date().toLocaleTimeString(),
-          };
-          setMessages((prev) => [...prev, audioMessageData]);
-        }
+      socket.on('message', (msg: { text?: string; senderName: string }) => {
+        const messageData: Message = {
+          text: msg.text,
+          sender: msg.senderName === username ? 'me' : 'simulated',
+          senderName: msg.senderName,
+          time: new Date().toLocaleTimeString(),
+        };
+        setMessages(prevMessages => {
+          const updatedMessages = [...prevMessages, messageData];
+          return updatedMessages.filter((msg, index, arr) =>
+            index === 0 || !(msg.text === arr[index - 1].text && msg.sender === arr[index - 1].sender)
+          );
+        });
+        scrollDown();
       });
     }
 
@@ -69,59 +74,33 @@ export const ChatWindow = () => {
         socket.off('message');
       }
     };
-  }, [socket]);
+  }, [socket, username]);
 
+  // Enviar mensagem
   const sendMessage = () => {
     if (input.trim() && socket) {
       const messageData: Message = {
         text: input,
         sender: 'me',
+        senderName: username,
         time: new Date().toLocaleTimeString(),
       };
-      setMessages((prev) => [...prev, messageData]);
-      socket.emit('message', input);
+      setMessages(prevMessages => {
+        const updatedMessages = [...prevMessages, messageData];
+        return updatedMessages.filter((msg, index, arr) =>
+          index === 0 || !(msg.text === arr[index - 1].text && msg.sender === arr[index - 1].sender)
+        );
+      });
+      socket.emit('message', { text: input, senderName: username });
       setInput('');
+      scrollDown();
     }
   };
 
-  const startRecording = async () => {
-    if (!isRecording) {
-      setIsRecording(true);
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      const recorder = new MediaRecorder(stream);
-      setMediaRecorder(recorder);
-
-      recorder.ondataavailable = (event) => {
-        if (event.data.size > 0) {
-          setAudioChunks((prev) => [...prev, event.data]);
-        }
-      };
-
-      recorder.start();
-    }
-  };
-
-  const stopRecording = () => {
-    if (isRecording && mediaRecorder) {
-      mediaRecorder.stop();
-      setIsRecording(false);
-
-      mediaRecorder.onstop = () => {
-        const audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
-        const audioUrl = URL.createObjectURL(audioBlob);
-
-        // Send audio message to server
-        const audioMessageData: Message = {
-          audio: audioUrl,
-          sender: 'me',
-          time: new Date().toLocaleTimeString(),
-        };
-        setMessages((prev) => [...prev, audioMessageData]);
-        socket.emit('message', { audio: audioUrl });
-
-        // Clear chunks
-        setAudioChunks([]);
-      };
+  // Rolagem automática para o fim
+  const scrollDown = () => {
+    if (bottomRef.current) {
+      bottomRef.current.scrollIntoView({ behavior: 'smooth' });
     }
   };
 
@@ -139,15 +118,21 @@ export const ChatWindow = () => {
           onChange={(e) => i18n.changeLanguage(e.target.value)}
         >
           <option value="en">English</option>
-          <option value="es">Português</option>
+          <option value="es">Español</option>
         </select>
       </div>
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
         {messages.map((msg, index) => (
-          <Message key={index} text={msg.text} sender={msg.sender} time={msg.time} />
+          <MessageComponent
+            key={index}
+            text={msg.text}
+            sender={msg.sender}
+            senderName={msg.senderName}
+            time={msg.time}
+          />
         ))}
+        <div ref={bottomRef} />
       </div>
-
       <div className="p-4 bg-white border-t flex items-center dark:bg-gray-800">
         <input
           className="flex-1 p-2 border rounded-l-lg focus:outline-none dark:border-gray-700 dark:bg-gray-900 dark:text-white"
