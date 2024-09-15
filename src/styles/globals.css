@@ -10,14 +10,21 @@
   color: #f7fafc;
 }
 
-@keyframes gradientAnimation {
-  0% { background-position: 0% 50%; }
-  50% { background-position: 100% 50%; }
-  100% { background-position: 0% 50%; }
+.dark .bg-animated-background {
+  background: linear-gradient(270deg, #0f172a, #1e293b, #334155, #475569, #0f172a); 
+  background-size: 400% 400%;
+  animation: gradientAnimation 15s ease infinite;
 }
 
+/* Modo claro */
 .bg-animated-background {
   background: linear-gradient(270deg, #1e3a8a, #3730a3, #4c1d95, #6b21a8, #1e3a8a);
   background-size: 400% 400%;
   animation: gradientAnimation 15s ease infinite;
+}
+
+@keyframes gradientAnimation {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
 }
