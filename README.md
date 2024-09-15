@@ -19,3 +19,10 @@ Para iniciar o **Projeto** utilize os comandos:
 npm install
 npm run dev
 ```
+Para iniciar o Server utilize os comandos:
+cd server
+```bash
+npm install
+npm run dev
+```
+
