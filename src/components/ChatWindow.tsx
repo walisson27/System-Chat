@@ -5,6 +5,9 @@ import { toggleDarkMode } from '@/utils/themeSwitcher';
 import { Message as MessageComponent } from './Message';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faMoon, faSun } from '@fortawesome/free-solid-svg-icons';
+import Image from 'next/image';
+import FlagEN from '../../public/assets/flags/eua.png';  
+import FlagPT from '../../public/assets/flags/Brasil.png';  
 
 type Message = {
   text?: string;
@@ -14,10 +17,9 @@ type Message = {
   time: string;
 };
 
-
 interface ChatWindowProps {
   username: string;
-  socket: any; 
+  socket: any;
 }
 
 export const ChatWindow = ({ username }: ChatWindowProps) => {
@@ -27,7 +29,6 @@ export const ChatWindow = ({ username }: ChatWindowProps) => {
   const [input, setInput] = useState('');
   const socket = initSocket();
 
-  // Carregar mensagens do localStorage
   useEffect(() => {
     const storedMessages = localStorage.getItem('chatMessages');
     if (storedMessages) {
@@ -40,7 +41,6 @@ export const ChatWindow = ({ username }: ChatWindowProps) => {
     }
   }, []);
 
-  // Salvar mensagens no localStorage
   useEffect(() => {
     try {
       localStorage.setItem('chatMessages', JSON.stringify(messages));
@@ -49,7 +49,6 @@ export const ChatWindow = ({ username }: ChatWindowProps) => {
     }
   }, [messages]);
 
-  // Receber mensagens do socket
   useEffect(() => {
     if (socket) {
       socket.on('message', (msg: { text?: string; senderName: string }) => {
@@ -76,7 +75,6 @@ export const ChatWindow = ({ username }: ChatWindowProps) => {
     };
   }, [socket, username]);
 
-  // Enviar mensagem
   const sendMessage = () => {
     if (input.trim() && socket) {
       const messageData: Message = {
@@ -97,7 +95,6 @@ export const ChatWindow = ({ username }: ChatWindowProps) => {
     }
   };
 
-  // Rolagem automática para o fim
   const scrollDown = () => {
     if (bottomRef.current) {
       bottomRef.current.scrollIntoView({ behavior: 'smooth' });
@@ -106,47 +103,53 @@ export const ChatWindow = ({ username }: ChatWindowProps) => {
 
   return (
     <div className="h-full bg-animated-background dark:bg-gray-700">
-    <div className="w-full max-w-md mx-auto flex flex-col h-full bg-gray-100 dark:bg-gray-900">
-      <div className="bg-teal-600 text-white p-4 flex items-center justify-between">
-        <h3 className="text-lg font-semibold">{t('welcome_message')}</h3>
-        <button onClick={toggleDarkMode} className="p-2 rounded-md dark:bg-gray-700 dark:text-white">
-          <FontAwesomeIcon icon={faMoon} className="dark:hidden" />
-          <FontAwesomeIcon icon={faSun} className="hidden dark:block" />
-        </button>
-        <select
-          className="ml-4 p-2 bg-gray-200 rounded-md dark:bg-gray-700 dark:text-white"
-          value={i18n.language}
-          onChange={(e) => i18n.changeLanguage(e.target.value)}
-        >
-          <option value="en">English</option>
-          <option value="es">Português</option>
-        </select>
-      </div>
-      <div className="flex-1 overflow-y-auto p-4 space-y-4">
-        {messages.map((msg, index) => (
-          <MessageComponent
-            key={index}
-            text={msg.text}
-            sender={msg.sender}
-            senderName={msg.senderName}
-            time={msg.time}
+      <div className="w-full max-w-md mx-auto flex flex-col h-full bg-gray-100 dark:bg-gray-900">
+        <div className="bg-teal-600 text-white p-4 flex items-center justify-between">
+          <h3 className="text-lg font-semibold">{t('welcome_message')}</h3>
+          <button onClick={toggleDarkMode} className="p-2 rounded-md dark:bg-gray-700 dark:text-white">
+            <FontAwesomeIcon icon={faMoon} className="dark:hidden" />
+            <FontAwesomeIcon icon={faSun} className="hidden dark:block" />
+          </button>
+          <div className="ml-4 flex items-center">
+            <Image
+              src={FlagEN}
+              alt="English"
+              className="w-8 h-6 cursor-pointer"
+              onClick={() => i18n.changeLanguage('en')}
+            />
+            <Image
+              src={FlagPT}
+              alt="Portuguese"
+              className="w-9 h-9 ml-4 cursor-pointer"
+              onClick={() => i18n.changeLanguage('pt')}
+            />
+          </div>
+        </div>
+        <div className="flex-1 overflow-y-auto p-4 space-y-4">
+          {messages.map((msg, index) => (
+            <MessageComponent
+              key={index}
+              text={msg.text}
+              sender={msg.sender}
+              senderName={msg.senderName}
+              time={msg.time}
+            />
+          ))}
+          <div ref={bottomRef} />
+        </div>
+        <div className="p-4 bg-white border-t flex items-center dark:bg-gray-800">
+          <input
+            className="flex-1 p-2 border rounded-l-lg focus:outline-none dark:border-gray-700 dark:bg-gray-900 dark:text-white"
+            placeholder={t('type_message')}
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            onKeyDown={(e) => e.key === 'Enter' && sendMessage()}
           />
-        ))}
-        <div ref={bottomRef} />
+          <button onClick={sendMessage} className="bg-teal-600 text-white px-4 py-2 rounded-r-lg dark:bg-teal-700">
+            {t('send_button')}
+          </button>
+        </div>
       </div>
-      <div className="p-4 bg-white border-t flex items-center dark:bg-gray-800">
-        <input
-          className="flex-1 p-2 border rounded-l-lg focus:outline-none dark:border-gray-700 dark:bg-gray-900 dark:text-white"
-          placeholder={t('type_message')}
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          onKeyDown={(e) => e.key === 'Enter' && sendMessage()}
-        />
-        <button onClick={sendMessage} className="bg-teal-600 text-white px-4 py-2 rounded-r-lg dark:bg-teal-700">
-          {t('send_button')}
-        </button>
-      </div>
-    </div>
     </div>
   );
 };

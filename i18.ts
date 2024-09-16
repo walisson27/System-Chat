@@ -4,7 +4,7 @@ import { initReactI18next } from 'react-i18next';
 
 // Importar os arquivos de tradução
 import enTranslation from './src/public/locales/en/translation.json';
-import esTranslation from './src/public/locales/pt/translation.json';
+import ptTranslation from './src/public/locales/pt/translation.json';
 
 // Inicializar i18next
 i18n
@@ -14,8 +14,8 @@ i18n
       en: {
         translation: enTranslation
       },
-      es: {
-        translation: esTranslation
+      pt: {
+        translation: ptTranslation
       }
     },
     lng: 'en', // Idioma padrão
