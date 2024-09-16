@@ -32,6 +32,8 @@ Para iniciar o **Projeto** utilize os comandos:
 npm install
 npm run dev
 ```
+Assim que o processo terminar, automaticamente será aberta no seu navegador a página `http://localhost:3000/`.
+
 Instalação do Server
 Navegue até o diretório do servidor e execute os seguintes comandos para instalar as dependências e iniciar o server:
 ```bash
