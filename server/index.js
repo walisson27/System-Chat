@@ -2,7 +2,7 @@ const app = require('express')();
 const server = require('http').createServer(app);
 const io = require('socket.io')(server, {
   cors: {
-    origin: "*", 
+    origin: "https://system-chat-5.onrender.com/", 
     methods: ["GET", "POST"]
   }
 });
