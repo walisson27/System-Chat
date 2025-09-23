@@ -1,27 +1,36 @@
-const app = require('express')()
-const server = require('http').createServer(app)
-const io = require('socket.io')(server, {cors: {origin: 'http://localhost:3000'}})
+const app = require('express')();
+const server = require('http').createServer(app);
+const io = require('socket.io')(server, {
+  cors: {
+    origin: "*", 
+    methods: ["GET", "POST"]
+  }
+});
 
-const PORT = 3001
+const PORT = process.env.PORT || 3001;
 
-io.on('connection', socket => {
+app.get("/", (req, res) => {
+  res.send("Servidor Socket.io rodando 🚀");
+});
+
+io.on('connection', (socket) => {
   console.log('Usuário conectado!', socket.id);
 
-  socket.on('disconnect', reason => {
-    console.log('Usuário desconectado!', socket.id)
-  })
+  socket.on('disconnect', () => {
+    console.log('Usuário desconectado!', socket.id);
+  });
 
-  socket.on('set_username', username => {
-    socket.data.username = username
-  })
+  socket.on('set_username', (username) => {
+    socket.data.username = username;
+  });
 
-  socket.on('message', text => {
+  socket.on('message', (text) => {
     io.emit('receive_message', {
       text,
       authorId: socket.id,
-      author: socket.data.username 
-    })
-  })
-})
+      author: socket.data.username || "Anônimo"
+    });
+  });
+});
 
-server.listen(PORT, () => console.log('Server running...'))
+server.listen(PORT, () => console.log(`Server running on port ${PORT}...`));
