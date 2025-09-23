@@ -6,10 +6,15 @@ export default function Join({ setChatVisibility, setSocket, setUsername }) {
 
   const handleJoin = () => {
     if (username.trim()) {
-      const socket = io('https://system-chat-5.onrender.com/');
-      socket.emit('join', username);
+      const socket = io('https://system-chat-5.onrender.com/', {
+        transports: ['websocket'], 
+      });
+
+      socket.emit('set_username', username);
+
       setSocket(socket);
-      setUsername(username); 
+      setUsername(username);
+
       setChatVisibility(true);
     }
   };
