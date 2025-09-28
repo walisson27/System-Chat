@@ -6,7 +6,7 @@ export default function Join({ setChatVisibility, setSocket, setUsername }) {
 
   const handleJoin = () => {
     if (username.trim()) {
-      const socket = io('https://system-chat-5.onrender.com/');
+      const socket = io('http://localhost:3001');
       socket.emit('join', username);
       setSocket(socket);
       setUsername(username); 

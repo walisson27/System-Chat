@@ -1,27 +1,41 @@
-const app = require('express')()
-const server = require('http').createServer(app)
-const io = require('socket.io')(server, {cors: {origin: 'https://system-chat-5.onrender.com/'}})
+const express = require('express')
+const http = require('http')
+const { Server } = require('socket.io')
 
-const PORT = 3001
+const app = express()
+const server = http.createServer(app)
 
-io.on('connection', socket => {
-  console.log('Usuário conectado!', socket.id);
+const io = new Server(server, {
+  cors: {
+    origin: "https://system-chat-new.vercel.app/", 
+  }
+})
 
-  socket.on('disconnect', reason => {
+const PORT = process.env.PORT || 3001
+
+
+app.get("/", (req, res) => {
+  res.send("Servidor Socket.io rodando 🚀")
+})
+
+io.on('connection', (socket) => {
+  console.log('Usuário conectado!', socket.id)
+
+  socket.on('disconnect', (reason) => {
     console.log('Usuário desconectado!', socket.id)
   })
 
-  socket.on('set_username', username => {
+  socket.on('set_username', (username) => {
     socket.data.username = username
   })
 
-  socket.on('message', text => {
+  socket.on('message', (text) => {
     io.emit('receive_message', {
       text,
       authorId: socket.id,
-      author: socket.data.username 
+      author: socket.data.username || "Anônimo"
     })
   })
 })
 
-server.listen(PORT, () => console.log('Server running...'))
+server.listen(PORT, () => console.log(`✅ Server running on port ${PORT}`))
